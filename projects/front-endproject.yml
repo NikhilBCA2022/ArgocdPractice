@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: my-project
+  namespace: argocd
+
+spec:
+  description: My project
+
+  sourceRepos:
+    - "https://github.com/NikhilBCA2022/ArgocdPractice"
+
+  destinations:
+    - namespace: my-project
+      server: https://172.31.72.207:33893
+
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  roles:
+
+    # Admin role
+    - name: admin
+      description: Project administrator
+
+      policies:
+        - p, proj:my-project:admin, applications, *, my-project/*, allow
+        - p, proj:my-project:admin, repositories, get, *, allow
+
+      groups:
+        - my-project-admins
+
+    # Developer role
+    - name: developer
+      description: Developer access
+
+      policies:
+        - p, proj:my-project:developer, applications, get, my-project/*, allow
+        - p, proj:my-project:developer, applications, sync, my-project/*, allow
+        - p, proj:my-project:developer, applications, action/*, my-project/*, allow
+
+      groups:
+        - my-project-developers
