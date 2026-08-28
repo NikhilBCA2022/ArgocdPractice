@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/NikhilBCA2022/ArgocdPractice
     targetRevision: main
-    path: ui_approch/nginx
+    path: ui_approach/nginx
 
   destination:
     server: https://172.31.72.207:33893
