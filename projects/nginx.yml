@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx
+  namespace: argocd
+
+spec:
+  project: my-project
+
+  source:
+    repoURL: https://github.com/NikhilBCA2022/ArgocdPractice
+    targetRevision: main
+    path: declarative_approach/onlineshop
+
+  destination:
+    server: https://172.31.72.207:33893
+    namespace: my-project
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+    syncOptions:
+      - CreateNamespace=true
