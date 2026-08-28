@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/NikhilBCA2022/ArgocdPractice
     targetRevision: main
-    path: declarative_approach/onlineshop
+    path: declarative_approach/online_shop
 
   destination:
     server: https://172.31.72.207:33893
