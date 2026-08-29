@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apache-stg
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NikhilBCA2022/ArgocdPractice.git
+    targetRevision: main
+    path: multicluster/apache      # Path to apache manifests
+  destination:
+    server: https://172.31.72.207:33893  # from `argocd cluster list`
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

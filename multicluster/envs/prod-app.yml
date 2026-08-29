@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: online-shop-prod
+  namespace: argocd
+spec:
+  project: default
+  source: https://github.com/NikhilBCA2022/ArgocdPractice.git
+    repoURL: 
+    targetRevision: main
+    path: multicluster/online-shop # Path within the repo
+  destination:
+    server: https://172.31.72.207:33894   # Production cluster API server URL here, run `argocd cluster list` to get the URL
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    

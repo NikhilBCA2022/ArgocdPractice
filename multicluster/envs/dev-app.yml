@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NikhilBCA2022/ArgocdPractice.git
+    targetRevision: main
+    path: multicluster/nginx        # Path to nginx manifests
+  destination:
+    server: https://kubernetes.default.svc    # from `argocd cluster list`
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
