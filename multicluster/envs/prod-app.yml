@@ -5,8 +5,8 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  source: https://github.com/NikhilBCA2022/ArgocdPractice.git
-    repoURL: 
+  source:
+    repoURL:  https://github.com/NikhilBCA2022/ArgocdPractice.git
     targetRevision: main
     path: multicluster/online-shop # Path within the repo
   destination:
