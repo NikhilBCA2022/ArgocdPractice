@@ -16,7 +16,7 @@ spec:
   source:
     repoURL: https://github.com/NikhilBCA2022/ArgocdPractice  # Git repository containing the app manifests
     targetRevision: main # Git branch, tag, or commit to track
-    path: applicationsets/chai-app # Path within the repo where manifests are located
+    path: monitoring/chai-app # Path within the repo where manifests are located
   destination:
     server: https://kubernetes.default.svc # Kubernetes API server address (in-cluster)
     namespace: default # Namespace where the app will be deployed
