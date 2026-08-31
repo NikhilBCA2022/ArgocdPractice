@@ -18,7 +18,28 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: VITE_GEMINI_API
+        - name: untu@ip-172-31-72-207:~/argocd-demos/image_updater/chai-app$ cat deployment.yml secret.yml service.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chai-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: chai-app
+  template:
+    metadata:
+      labels:
+        app: chai-app
+    spec:
+      containers:
+      - name: chai-app
+        image: nikhilj1402/chai-devops:v1.0.0
+        ports:
+        - containerPort: 80
+        env:
+        - name: password
           valueFrom:
             secretKeyRef:
               name: argocd-image-updater-git-creds
