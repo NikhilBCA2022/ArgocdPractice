@@ -1,3 +1,0 @@
-kustomize:
-  images:
-  - trainwithshubham/chai-devops:v1.0.3
