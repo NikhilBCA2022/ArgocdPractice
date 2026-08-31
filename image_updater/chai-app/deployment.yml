@@ -21,8 +21,8 @@ spec:
         - name: VITE_GEMINI_API
           valueFrom:
             secretKeyRef:
-              name: chai-app-secret
-              key: VITE_GEMINI_API
+              name: argocd-image-updater-git-creds
+              key: password
         resources:
           requests:
             memory: "64Mi"
