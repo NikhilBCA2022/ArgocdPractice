@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: chai-app
-        image: amitabhdevops/chai-devopbkjhljhio
-        ports:
+        image: nikhilj1402/chai-devops:v1.3.1         
+      ports:
         - containerPort: 80
         env:
         - name: VITE_GEMINI_API

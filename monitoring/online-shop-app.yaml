@@ -1,0 +1,19 @@
+# This ArgoCD Application manifest deploys the Online Shop app from a GitHub repository.
+apiVersion: argoproj.io/v1alpha1           # API version for ArgoCD Application CRD
+kind: Application                         # Declares this resource as an ArgoCD Application
+metadata:
+  name: online-shop-app                   # Name of the ArgoCD Application
+  namespace: argocd                       # Namespace where ArgoCD is installed
+spec:
+  project: default                        # ArgoCD project to associate with this app
+  source:
+    repoURL: https://github.com/NikhilBCA2022/ArgocdPractice  # Git repo containing app manifests (replace <your-username>)
+    targetRevision: main                  # Git branch or tag to track
+    path: monitoring/online_shop          # Path within the repo to the app manifests
+  destination:
+    server: https://kubernetes.default.svc # Kubernetes API server URL (default for in-cluster)
+    namespace: default                    # Namespace to deploy the app into
+  syncPolicy:
+    automated:                           # Enables automated sync
+      prune: true                        # Remove resources not defined in Git
+      selfHeal: true                     # Automatically fix out-of-sync resources
