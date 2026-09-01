@@ -1,0 +1,3 @@
+kustomize:
+  images:
+  - nikhilj1402/chai-devops:v1.2.1
