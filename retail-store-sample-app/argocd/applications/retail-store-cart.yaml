@@ -7,10 +7,10 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: retail-store
-  source: https://github.com/NikhilBCA2022/ArgocdPractice
-    repoURL: 
+  source: 
+    repoURL:  https://github.com/NikhilBCA2022/ArgocdPractice
     targetRevision: main
-    path: src/cart/chart
+    path: retail-store-sample-app/src/cart/chart
     helm:
       valueFiles:
         - values.yaml

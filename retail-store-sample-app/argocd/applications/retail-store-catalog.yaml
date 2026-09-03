@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/NikhilBCA2022/ArgocdPractice
     targetRevision: main
-    path: src/catalog/chart
+    path: retail-store-sample-app/src/catalog/chart
     helm:
       valueFiles:
         - values.yaml
