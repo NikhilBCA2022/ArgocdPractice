@@ -7,8 +7,8 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: retail-store
-  source: 
-    repoURL: https://github.com/LondheShubham153/retail-store-sample-app
+  source: https://github.com/NikhilBCA2022/ArgocdPractice
+    repoURL: 
     targetRevision: main
     path: src/cart/chart
     helm:
