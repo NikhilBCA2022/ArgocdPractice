@@ -102,14 +102,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
-
           docker build \
             -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} \
             ./retail-store-sample-app/src/${{ matrix.service }}
 
       - name: Push Docker Image
         run: |
-
           docker push \
             $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA}
 
@@ -142,7 +140,6 @@ jobs:
 
       - name: Get AWS Account ID
         run: |
-
           ACCOUNT_ID=$(aws sts get-caller-identity \
             --query Account \
             --output text)
@@ -177,7 +174,6 @@ jobs:
 
       - name: Commit Helm changes
         run: |
-
           git config user.name "github-actions[bot]"
 
           git config user.email \
