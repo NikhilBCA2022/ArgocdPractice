@@ -5,7 +5,7 @@ on:
     branches:
       - gitops
     paths:
-      - "src/**"
+      - "retail-store-sample-app/src/**"
 
 permissions:
   contents: write
@@ -15,9 +15,7 @@ env:
 
 jobs:
 
-  # --------------------------------
-  # Step 1: Find changed services
-  # --------------------------------
+  # 1. Find which services changed
   detect-changes:
     name: Detect Changed Services
     runs-on: ubuntu-latest
@@ -38,23 +36,23 @@ jobs:
 
           SERVICES=""
 
-          if git diff --name-only HEAD~1 HEAD | grep -q "^src/cart/"; then
+          if git diff --name-only HEAD~1 HEAD | grep -q "^retail-store-sample-app/src/cart/"; then
             SERVICES="$SERVICES cart"
           fi
 
-          if git diff --name-only HEAD~1 HEAD | grep -q "^src/catalog/"; then
+          if git diff --name-only HEAD~1 HEAD | grep -q "^retail-store-sample-app/src/catalog/"; then
             SERVICES="$SERVICES catalog"
           fi
 
-          if git diff --name-only HEAD~1 HEAD | grep -q "^src/checkout/"; then
+          if git diff --name-only HEAD~1 HEAD | grep -q "^retail-store-sample-app/src/checkout/"; then
             SERVICES="$SERVICES checkout"
           fi
 
-          if git diff --name-only HEAD~1 HEAD | grep -q "^src/orders/"; then
+          if git diff --name-only HEAD~1 HEAD | grep -q "^retail-store-sample-app/src/orders/"; then
             SERVICES="$SERVICES orders"
           fi
 
-          if git diff --name-only HEAD~1 HEAD | grep -q "^src/ui/"; then
+          if git diff --name-only HEAD~1 HEAD | grep -q "^retail-store-sample-app/src/ui/"; then
             SERVICES="$SERVICES ui"
           fi
 
@@ -65,11 +63,9 @@ jobs:
           echo "services=$JSON" >> "$GITHUB_OUTPUT"
 
 
-  # --------------------------------
-  # Step 2: Build and push images
-  # --------------------------------
+  # 2. Build and push Docker images
   build-and-push:
-    name: Build and Push Images
+    name: Build and Push Docker Images
     needs: detect-changes
 
     if: needs.detect-changes.outputs.services != '[]'
@@ -85,19 +81,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Configure AWS
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Login to ECR
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Get AWS account ID
       - name: Get AWS Account ID
         run: |
 
@@ -105,17 +98,15 @@ jobs:
             --query Account \
             --output text)
 
-          echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
 
-      # Build Docker image
       - name: Build Docker Image
         run: |
 
           docker build \
             -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} \
-            ./src/${{ matrix.service }}
+            ./retail-store-sample-app/src/${{ matrix.service }}
 
-      # Push Docker image
       - name: Push Docker Image
         run: |
 
@@ -123,9 +114,7 @@ jobs:
             $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA}
 
 
-  # --------------------------------
-  # Step 3: Update Helm values
-  # --------------------------------
+  # 3. Update Helm values
   update-manifests:
     name: Update Helm Values
     needs:
@@ -144,15 +133,13 @@ jobs:
           ref: gitops
           fetch-depth: 0
 
-      # Configure AWS
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Get AWS account ID
       - name: Get AWS Account ID
         run: |
 
@@ -160,20 +147,19 @@ jobs:
             --query Account \
             --output text)
 
-          echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
+          echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
 
-      # Update values.yaml
       - name: Update Helm values
         env:
           SERVICES: ${{ needs.detect-changes.outputs.services }}
+
         run: |
 
-          echo "Services to update:"
-          echo "$SERVICES"
+          echo "Updating Helm values..."
 
           for SERVICE in $(echo "$SERVICES" | jq -r '.[]'); do
 
-            FILE="./src/$SERVICE/chart/values.yaml"
+            FILE="./retail-store-sample-app/src/$SERVICE/chart/values.yaml"
 
             echo "Updating $FILE"
 
@@ -185,12 +171,10 @@ jobs:
               "s|tag:.*|tag: \"${GITHUB_SHA}\"|" \
               "$FILE"
 
-            echo "Updated:"
-            grep -A3 "^image:" "$FILE"
+            echo "Updated $FILE"
 
           done
 
-      # Commit all changes once
       - name: Commit Helm changes
         run: |
 
@@ -199,13 +183,12 @@ jobs:
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add src/*/chart/values.yaml
+          git add retail-store-sample-app/src/*/chart/values.yaml
 
           git commit \
             -m "Update Docker images [skip ci]"
 
-      # Push one time
-      - name: Push GitOps changes
+      - name: Push changes to GitHub
         run: |
 
           git push origin gitops
