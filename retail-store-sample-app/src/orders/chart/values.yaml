@@ -6,7 +6,7 @@ replicaCount: 1
 image:
   repository: 866435872216.dkr.ecr.us-east-1.amazonaws.com/retail-store-orders
   pullPolicy: Always
-  tag: "8113d75ec999d6259915ac3fc716ea5e21efd9f7"
+  tag: "8b778363518d275e1f3db0848265bd600739accc"
 imagePullSecrets:
   - name: regcred
 nameOverride: ""
@@ -81,7 +81,7 @@ postgresql:
   image:
     repository: 866435872216.dkr.ecr.us-east-1.amazonaws.com/retail-store-orders
     pullPolicy: IfNotPresent
-    tag: "8113d75ec999d6259915ac3fc716ea5e21efd9f7"
+    tag: "8b778363518d275e1f3db0848265bd600739accc"
   service:
     type: ClusterIP
     port: 5432
@@ -102,7 +102,7 @@ rabbitmq:
   image:
     repository: 866435872216.dkr.ecr.us-east-1.amazonaws.com/retail-store-orders
     pullPolicy: IfNotPresent
-    tag: "8113d75ec999d6259915ac3fc716ea5e21efd9f7"
+    tag: "8b778363518d275e1f3db0848265bd600739accc"
   service:
     type: ClusterIP
     amqp:
