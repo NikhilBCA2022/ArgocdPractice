@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - gitops
+      - main
     paths:
       - "retail-store-sample-app/src/**"
 
