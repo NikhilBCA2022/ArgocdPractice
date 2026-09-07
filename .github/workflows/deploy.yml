@@ -61,18 +61,10 @@ jobs:
       - name: Get AWS Account ID
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-
           echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
-
-<<<<<<< HEAD
-      - name: Build Docker Image
-        run: |
-           docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} ./retail-store-sample-app/src/${{ matrix.service }}
-=======
           echo "AWS Account ID: $ACCOUNT_ID"
           echo "AWS Region: $AWS_REGION"
           echo "Service: ${{ matrix.service }}"
->>>>>>> 9962b85 (Fix CI CD pipeline)
 
       # --------------------------------------------------------
       # Build Docker image
@@ -93,7 +85,6 @@ jobs:
   update-manifests:
     name: Update Helm Values
     needs: build-and-push
-
     runs-on: ubuntu-latest
 
     steps:
@@ -123,9 +114,7 @@ jobs:
       - name: Get AWS Account ID
         run: |
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-
           echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
-
           echo "AWS Account ID: $ACCOUNT_ID"
           echo "AWS Region: $AWS_REGION"
 
@@ -134,7 +123,6 @@ jobs:
       # --------------------------------------------------------
       - name: Update Helm values
         run: |
-
           SERVICES="cart catalog checkout orders ui"
 
           for SERVICE in $SERVICES; do
@@ -159,7 +147,6 @@ jobs:
       # --------------------------------------------------------
       - name: Show updated Helm values
         run: |
-
           SERVICES="cart catalog checkout orders ui"
 
           for SERVICE in $SERVICES; do
@@ -179,9 +166,7 @@ jobs:
       # --------------------------------------------------------
       - name: Commit Helm changes
         run: |
-
           git config user.name "github-actions[bot]"
-
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add retail-store-sample-app/src/*/chart/values.yaml
