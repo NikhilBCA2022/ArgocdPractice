@@ -106,9 +106,8 @@ jobs:
 
           echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
 
-      - name: Build Docker Image
-        run : - name: Build Docker Image
-  run: docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} ./retail-store-sample-app/src/${{ matrix.service }}
+       - name: Build Docker Image
+         run: docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} ./retail-store-sample-app/src/${{ matrix.service }}
 
       - name: Push Docker Image
         run: |
