@@ -6,7 +6,6 @@ on:
       - gitops
     paths:
       - "retail-store-sample-app/src/**"
-      - ".github/workflows/deploy.yml"
 
 permissions:
   contents: write
@@ -16,77 +15,33 @@ env:
 
 jobs:
 
-  # 1. Find which services changed
-  detect-changes:
-    name: Detect Changed Services
-    runs-on: ubuntu-latest
-
-    outputs:
-      services: ${{ steps.detect.outputs.services }}
-
-    steps:
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed services
-        id: detect
-        run: |
-
-          SERVICES=""
-
-          # Ensure we have the gitops branch to compare against
-          git fetch origin gitops --quiet || true
-
-          DIFF_FILES=$(git diff --name-only origin/gitops...HEAD)
-
-          if echo "$DIFF_FILES" | grep -q "^retail-store-sample-app/src/cart/"; then
-            SERVICES="$SERVICES cart"
-          fi
-
-          if echo "$DIFF_FILES" | grep -q "^retail-store-sample-app/src/catalog/"; then
-            SERVICES="$SERVICES catalog"
-          fi
-
-          if echo "$DIFF_FILES" | grep -q "^retail-store-sample-app/src/checkout/"; then
-            SERVICES="$SERVICES checkout"
-          fi
-
-          if echo "$DIFF_FILES" | grep -q "^retail-store-sample-app/src/orders/"; then
-            SERVICES="$SERVICES orders"
-          fi
-
-          if echo "$DIFF_FILES" | grep -q "^retail-store-sample-app/src/ui/"; then
-            SERVICES="$SERVICES ui"
-          fi
-
-          echo "Changed services: $SERVICES"
-
-          JSON=$(echo "$SERVICES" | jq -R -s -c 'split(" ") | map(select(length > 0))')
-
-          echo "services=$JSON" >> "$GITHUB_OUTPUT"
-
-
-  # 2. Build and push Docker images
+  # ============================================================
+  # 1. Build and push Docker images to Amazon ECR
+  # ============================================================
   build-and-push:
     name: Build and Push Docker Images
-    needs: detect-changes
-
-    if: needs.detect-changes.outputs.services != '[]'
-
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+        service:
+          - cart
+          - catalog
+          - checkout
+          - orders
+          - ui
 
     steps:
 
+      # --------------------------------------------------------
+      # Checkout source code
+      # --------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # --------------------------------------------------------
+      # Configure AWS
+      # --------------------------------------------------------
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -94,48 +49,58 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # --------------------------------------------------------
+      # Login to Amazon ECR
+      # --------------------------------------------------------
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # --------------------------------------------------------
+      # Get AWS Account ID
+      # --------------------------------------------------------
       - name: Get AWS Account ID
         run: |
-
-          ACCOUNT_ID=$(aws sts get-caller-identity \
-            --query Account \
-            --output text)
-
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "AWS Account ID: $ACCOUNT_ID"
+          echo "AWS Region: $AWS_REGION"
+          echo "Service: ${{ matrix.service }}"
 
+      # --------------------------------------------------------
+      # Build Docker image
+      # --------------------------------------------------------
       - name: Build Docker Image
-        run: |
-           docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} ./retail-store-sample-app/src/${{ matrix.service }}
+        run: docker build -t $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA} ./retail-store-sample-app/src/${{ matrix.service }}
 
+      # --------------------------------------------------------
+      # Push Docker image to ECR
+      # --------------------------------------------------------
       - name: Push Docker Image
-        run: |
-
-          docker push \
-            $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA}
+        run: docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-${{ matrix.service }}:${GITHUB_SHA}
 
 
-  # 3. Update Helm values
+  # ============================================================
+  # 2. Update Helm values.yaml
+  # ============================================================
   update-manifests:
     name: Update Helm Values
-    needs:
-      - detect-changes
-      - build-and-push
-
-    if: needs.detect-changes.outputs.services != '[]'
-
+    needs: build-and-push
     runs-on: ubuntu-latest
 
     steps:
 
+      # --------------------------------------------------------
+      # Checkout gitops branch
+      # --------------------------------------------------------
       - name: Checkout latest code
         uses: actions/checkout@v4
         with:
           ref: gitops
           fetch-depth: 0
 
+      # --------------------------------------------------------
+      # Configure AWS
+      # --------------------------------------------------------
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -143,55 +108,73 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # --------------------------------------------------------
+      # Get AWS Account ID
+      # --------------------------------------------------------
       - name: Get AWS Account ID
         run: |
-
-          ACCOUNT_ID=$(aws sts get-caller-identity \
-            --query Account \
-            --output text)
-
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           echo "ACCOUNT_ID=$ACCOUNT_ID" >> "$GITHUB_ENV"
+          echo "AWS Account ID: $ACCOUNT_ID"
+          echo "AWS Region: $AWS_REGION"
 
+      # --------------------------------------------------------
+      # Update all Helm values.yaml files
+      # --------------------------------------------------------
       - name: Update Helm values
-        env:
-          SERVICES: ${{ needs.detect-changes.outputs.services }}
-
         run: |
+          SERVICES="cart catalog checkout orders ui"
 
-          echo "Updating Helm values..."
-
-          for SERVICE in $(echo "$SERVICES" | jq -r '.[]'); do
+          for SERVICE in $SERVICES; do
 
             FILE="./retail-store-sample-app/src/$SERVICE/chart/values.yaml"
 
-            echo "Updating $FILE"
+            echo "========================================"
+            echo "Updating $SERVICE"
+            echo "File: $FILE"
+            echo "========================================"
 
-            sed -i \
-              "s|repository:.*|repository: $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-$SERVICE|" \
-              "$FILE"
+            sed -i "s|repository:.*|repository: $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/retail-store-$SERVICE|" "$FILE"
 
-            sed -i \
-              "s|tag:.*|tag: \"${GITHUB_SHA}\"|" \
-              "$FILE"
+            sed -i "s|tag:.*|tag: \"${GITHUB_SHA}\"|" "$FILE"
 
             echo "Updated $FILE"
 
           done
 
+      # --------------------------------------------------------
+      # Display updated values
+      # --------------------------------------------------------
+      - name: Show updated Helm values
+        run: |
+          SERVICES="cart catalog checkout orders ui"
+
+          for SERVICE in $SERVICES; do
+
+            FILE="./retail-store-sample-app/src/$SERVICE/chart/values.yaml"
+
+            echo "========================================"
+            echo "$FILE"
+            echo "========================================"
+
+            cat "$FILE"
+
+          done
+
+      # --------------------------------------------------------
+      # Commit changes
+      # --------------------------------------------------------
       - name: Commit Helm changes
         run: |
-
           git config user.name "github-actions[bot]"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add retail-store-sample-app/src/*/chart/values.yaml
 
-          git commit \
-            -m "Update Docker images [skip ci]" || echo "No changes to commit"
+          git commit -m "Update Docker images [skip ci]"
 
+      # --------------------------------------------------------
+      # Push changes back to gitops
+      # --------------------------------------------------------
       - name: Push changes to GitHub
-        run: |
-
-          git push origin gitops || echo "No changes to push"
+        run: git push origin gitops
